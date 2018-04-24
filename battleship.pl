@@ -189,8 +189,6 @@ getShipCoordinate([X,Y],[Ship|Ships],CoordinateList2):-
 
 gameEnded(Sunk,Fleet,Response):-
     length(Fleet,CountFleet),
-    write(Sunk),nl,
-    write(CountFleet),nl,
     Sunk==CountFleet,
     Response='YES'.
 gameEnded(Sunk,Fleet,Response):-
