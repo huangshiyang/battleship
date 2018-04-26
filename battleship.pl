@@ -35,26 +35,46 @@ gameConfig({Human,AI}):-
         write('Play mode: AI vs AI (a), or Human vs AI (b)'),
         nl,
         read(Mode),
-        gameLoop(Mode,{Human,AI},'YES').
+        (('a'==Mode;'b'==Mode)->
+            gameLoop(Mode,{Human,AI},'YES')
+        ;
+            write('Unknown mode'),nl,
+            gameConfig({Human,AI})
+        ).
 
 %q to quit
 validInput(q).
-validInput([X,Y]):-number(X),number(Y),X>=0,Y>=0.
+validInput([X,Y]):-number(X),number(Y),X>0,Y>0,X<11,Y<11.
 
-checkInput(Input,Input):-validInput(Input).
-checkInput(Input,Valid):-
+checkInput(_,Input,Valid):-
         \+validInput(Input),
-        write('Please shoot at [X,Y], X and Y are positive numbers.'),
+        write('Please shoot at [X,Y], X and Y are 1 to 10.'),
         nl,
         read(NewInput),
-        checkInput(NewInput,Valid).
+        checkInput(_,NewInput,Valid).
+checkInput(Board,Input,Valid):-
+        validInput(Input),
+        getPoint(Input,Board,Val),
+        ('~'==Val->
+            [InX,InY]=Input,
+            X#=InX-1,
+            Y#=InY-1,
+            Valid=[X,Y]
+        ;
+            [X,Y]=Input,
+            write('Already shot at ['),write(X),write(','),write(Y),
+            write('], please select other coordinates.'),
+            nl,
+            read(NewInput),
+            checkInput(Board,NewInput,Valid)
+        ).
 
 gameLoop("q"):-write('Goodbye!').
 gameLoop(Mode,{Human,AI},'YES'):-
-    {_AIGameBoard,_AISunk,AIFleet}=AI,
-    {HumanGameBoard,_HumanSunk,HumanFleet}=Human,
+    {AIGameBoard,_AISunk,AIFleet}=AI,
+    {HumanGameBoard,_HumanSunk,HumanFleet}=Human,%AI2
     %AI turn
-    aiChoice(AIInput),
+    aiChoice(AIGameBoard,AIInput),
     
     shoot(AIInput,AI,{AINewBoard,AINewSunk,AINewFleet}),
     gameEnded(AINewSunk,AIFleet,AiWins),
@@ -66,20 +86,20 @@ gameLoop(Mode,{Human,AI},'YES'):-
     write('AIs Ocean: '),nl,
     printBoard(HumanGameBoard), nl,
 
-    (Mode==a->
+    ('a'==Mode->
         %AI vs AI
-        aiChoice(AI2Input),
+        aiChoice(HumanGameBoard,AI2Input),
     
         shoot(AI2Input,Human,{HumanNewBoard,HumanNewSunk,HumanNewFleet}),
         gameEnded(HumanNewSunk,HumanFleet,Ai2Wins),
         decide2continue(AiWins,Ai2Wins,Continue),
         sleep(0.1),
         gameLoop(Mode,{{HumanNewBoard,HumanNewSunk,HumanNewFleet},{AINewBoard,AINewSunk,AINewFleet}},Continue)
-        ;
+        ;'b'==Mode->
         %Human
         write('Shoot at [X,Y]:'),nl,
         read(Input),
-        checkInput(Input,ValidInput),
+        checkInput(HumanGameBoard,Input,ValidInput),
         (q==ValidInput->
             gameLoop("q")
         ;
@@ -97,6 +117,7 @@ gameLoop(_Mode,{Human,AI},'NO'):-
     {AIBoard,AISunk,_}=AI,
     {HumanBoard,HumanSunk,_}=Human,
     write('Game ended'),nl,
+    write('=========='),nl,
     write('My Ocean:'),nl,
     printBoard(AIBoard),nl,
     write('AIs Ocean:'),nl,
@@ -110,9 +131,16 @@ gameLoop(_Mode,{Human,AI},'NO'):-
 
 %TODO smart AI
 % totally random.
-aiChoice([RandX,RandY]):-
-    random(0,9,RandX),
-    random(0,9,RandY).
+aiChoice(Board,[RandX,RandY]):-
+    random(1,11,X),
+    random(1,11,Y),
+    getPoint([X,Y],Board,Val),
+    ('~'==Val->
+        RandX#=X-1,
+        RandY#=Y-1
+    ;
+        aiChoice(Board,[RandX,RandY])
+    ).
 
 shoot([X,Y],{Board,CountSunk,Fleet},{NewBoard,NewCounter,NewFleet}):-
     checkShoot([X,Y],Fleet,Result,NewFleet),
@@ -170,6 +198,11 @@ replaceColumn([_|Cs],0,Value,[Value|Cs]).
 replaceColumn([C|Cs],Column,Value,[C|Rs]):-
     Column>0,NewColumn#=Column-1,
     replaceColumn(Cs,NewColumn,Value,Rs).
+
+% get the point [X,Y] value on the board
+getPoint([X,Y],Board,Val):-
+    nth(Y,Board,RowList),
+    nth(X,RowList,Val).
 
 %update all the points for the sink ship to 's'
 updateSinkShip([P|Ps],Result,BoardIn,BoardOut):-
