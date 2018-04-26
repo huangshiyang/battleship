@@ -29,7 +29,7 @@ fleet(Fleet):-
 createState(InitialBoard,Player) :-
         %createFleet(Fleet),%TODO randomly or manually create fleet
         fleet(Fleet),
-        Player={InitialBoard,[],Fleet}.
+        Player={InitialBoard,0,Fleet}.
 
 gameConfig({Human,AI}):-
         write('Play mode: AI vs AI (a), or Human vs AI (b)'),
@@ -96,8 +96,10 @@ gameLoop(Mode,{Human,AI},'YES'):-
 gameLoop(_Mode,{Human,AI},'NO'):-
     {AIBoard,AISunk,_}=AI,
     {HumanBoard,HumanSunk,_}=Human,
-    println('Game ended'),
+    write('Game ended'),nl,
+    write('My Ocean:'),nl,
     printBoard(AIBoard),nl,
+    write('AIs Ocean:'),nl,
     printBoard(HumanBoard),nl,
     (AISunk>HumanSunk->
         write('You lose'),nl
@@ -121,7 +123,7 @@ shoot([X,Y],{Board,CountSunk,Fleet},{NewBoard,NewCounter,NewFleet}):-
     's'==Result->
         getShipCoordinate([X,Y],Fleet,CoordinateList),
         updateSinkShip(CoordinateList,'s',Board,NewBoard),
-        NewCounter=CountSunk+1
+        NewCounter#=CountSunk+1
     ).
 shoot([X,Y],{Board,CountSunk,Fleet},{NewBoard,CountSunk,NewFleet}):-
     checkShoot([X,Y],Fleet,'m',NewFleet),
@@ -134,15 +136,15 @@ checkShoot([X,Y],[Ship|Ships],Result,NewFleet):-
         Result='h'
     ),
     NewFleet=[NewShip|Ships].
-%TODO fix bug, we lose ship when we hit the posterior Ship
 checkShoot([X,Y],[Ship|Ships],Result,NewFleet):-
     checkMiss([X,Y],Ship),
-    checkShoot([X,Y],Ships,Result,NewFleet).
+    checkShoot([X,Y],Ships,Result,Tmp),
+    NewFleet=[Ship|Tmp].
 checkShoot([_X,_Y],[],'m',[]).
 checkHit([X,Y],Ship,NewShip):-
     {CoordinateList,HitList}=Ship,
     member([X,Y],CoordinateList),
-    append(HitList,[X,Y],NewHitList),
+    append(HitList,[[X,Y]],NewHitList),
     NewShip={CoordinateList,NewHitList}.
 checkMiss([X,Y],Ship):-
     {CoordinateList,_HitList}=Ship,
@@ -150,10 +152,9 @@ checkMiss([X,Y],Ship):-
 checkSink([X,Y],Ship,NewShip):-
         {CoordinateList,HitList}=Ship,
         member([X,Y],CoordinateList),
-        append(HitList,[X,Y],NewHitList),
-        length(NewHitList,CountHit2),
+        append(HitList,[[X,Y]],NewHitList),
+        length(NewHitList,CountHit),
         length(CoordinateList,CountCoordinate),
-        CountHit#=CountHit2/2,
         CountHit==CountCoordinate,
         NewShip={CoordinateList,NewHitList}.
 
