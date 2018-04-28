@@ -1,5 +1,4 @@
-%TODO smart AI
-% totally random.
+%totally random.
 aiChoice(Board,[RandX,RandY]):-
     random(1,11,X),
     random(1,11,Y),

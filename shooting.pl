@@ -1,4 +1,4 @@
-% shoot([X,Y],Player,UpdatedPlayer)
+%shoot([X,Y],Player,UpdatedPlayer)
 shoot([X,Y],{Board,CountSunk,Fleet},{NewBoard,NewCounter,NewFleet}):-
     checkShoot([X,Y],Fleet,Result,NewFleet),
     ('●'==Result->%hit
