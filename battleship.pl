@@ -82,6 +82,11 @@ gameLoop(GameMode,DebugMode,{Human,AI},'YES'):-
     
     shoot(AIInput,{AIGameBoard,_AISunk,HumanFleet},{AINewBoard,AINewSunk,HumanNewFleet}),
     gameEnded(AINewSunk,HumanNewFleet,AiWins),
+    ('YES'==AiWins->
+        gameLoop("q")
+        ;
+        nl
+    ),
 
     write('My fleet:'),nl,
     printFleet(HumanNewFleet),
@@ -103,7 +108,7 @@ gameLoop(GameMode,DebugMode,{Human,AI},'YES'):-
         shoot(AI2Input,{HumanGameBoard,_HumanSunk,AIFleet},{HumanNewBoard,HumanNewSunk,AINewFleet}),
         gameEnded(HumanNewSunk,AINewFleet,Ai2Wins),
         decide2continue(AiWins,Ai2Wins,Continue),
-        sleep(0.1),
+        sleep(0.01),
         gameLoop(GameMode,DebugMode,{{HumanNewBoard,HumanNewSunk,HumanNewFleet},{AINewBoard,AINewSunk,AINewFleet}},Continue)
         ;'b'==GameMode->
         %Human
