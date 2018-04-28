@@ -1,0 +1,3 @@
+:-include(battleship).
+
+run:-start.
