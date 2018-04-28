@@ -6,15 +6,19 @@ createFleet(Fleet,GameMode):-
         ('a'==PlaceMode->
             write('Place your Carrier (size 5)'),nl,
             placeShip([],TmpFleet1,5),
+            write('My fleet:'),nl,
             printFleet(TmpFleet1),
             write('Place your Battleship (size 4)'),nl,
             placeShip(TmpFleet1,TmpFleet2,4),
+            write('My fleet:'),nl,
             printFleet(TmpFleet2),
             write('Place your Cruiser (size 3)'),nl,
             placeShip(TmpFleet2,TmpFleet3,3),
+            write('My fleet:'),nl,
             printFleet(TmpFleet3),
             write('Place your Submarine (size 3)'),nl,
             placeShip(TmpFleet3,TmpFleet4,3),
+            write('My fleet:'),nl,
             printFleet(TmpFleet4),
             write('Place your Destroyer (size 2)'),nl,
             placeShip(TmpFleet4,Fleet,2),
@@ -38,11 +42,15 @@ placeShip(Fleet,NewFleet,N):-
     (('h'==Mode;'v'==Mode)->
         write('Place at [X,Y]:'),nl,
         read(Input),
-        checkPlace(Input,Mode,N),
-        generateShipCoords(ShipCoords,Input,Mode,N),
-        checkConflict(Fleet,ShipCoords,N),
-        Ship={ShipCoords,[]},
-        NewFleet=[Ship|Fleet]
+        checkPlace(Input,Mode,N,ValidInput),
+        generateShipCoords(ShipCoords,ValidInput,Mode,N),
+        (checkConflict(Fleet,ShipCoords)->
+            Ship={ShipCoords,[]},
+            NewFleet=[Ship|Fleet]
+        ;   
+            write('The ships cannot overlap, please retry'),nl,
+            placeShip(Fleet,NewFleet,N)
+        )
     ;
         write('Unknown direciton'),nl,
         placeShip(Fleet,NewFleet,N)
@@ -59,8 +67,10 @@ validPlace([X,Y],Mode,N):-
         Y<Boundary
     ).
 
-checkPlace(Input,Mode,N):-validPlace(Input,Mode,N).
-checkPlace(Input,Mode,N):-
+checkPlace(Input,Mode,N,Valid):-
+    validPlace(Input,Mode,N),
+    Valid=Input.
+checkPlace(Input,Mode,N,Valid):-
     \+validPlace(Input,Mode,N),
     Boundary#=11-N,
     ('h'=Mode->
@@ -71,22 +81,13 @@ checkPlace(Input,Mode,N):-
         write(Boundary),write('.'),nl
     ),
     read(NewInput),
-    checkPlace(NewInput,Mode,N).
+    checkPlace(NewInput,Mode,N,Valid).
 
-checkConflict([],_,_).
-checkConflict([Ship|Ships],GeneratedCoords,N):-
+checkConflict([],_).
+checkConflict([Ship|Ships],GeneratedCoords):-
     {ShipCoords, _HitPoint} = Ship,
     conflictFree(ShipCoords,GeneratedCoords),
-    checkConflict(Ships,GeneratedCoords,N).
-checkConflict([Ship|Ships],GeneratedCoords,N):-
-    {ShipCoords, _HitPoint} = Ship,
-    \+conflictFree(ShipCoords,GeneratedCoords),
-    write('The ships cannot overlap, please retry'),nl,
-    write('Place at [X,Y]:'),nl,
-    read(Input),
-    checkPlace(Input,Mode,N),
-    generateShipCoords(GeneratedCoords,Input,Mode,N),
-    checkConflict([Ship|Ships],GeneratedCoords,N).
+    checkConflict(Ships,GeneratedCoords).
 
 conflictFree(_,[]).
 conflictFree(ShipCoords,[GeneratedCoord|Coords]):-
