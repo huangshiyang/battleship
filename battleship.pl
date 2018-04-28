@@ -50,12 +50,12 @@ debugConfig(GameMode,{Human,AI}):-
 validInput(q).
 validInput([X,Y]):-number(X),number(Y),X>0,Y>0,X<11,Y<11.
 
-checkInput(_,Input,Valid):-
+checkInput(Board,Input,Valid):-
     \+validInput(Input),
     write('Please shoot at [X,Y], X and Y are 1 to 10.'),
     nl,
     read(NewInput),
-    checkInput(_,NewInput,Valid).
+    checkInput(Board,NewInput,Valid).
 checkInput(Board,Input,Valid):-
     validInput(Input),
     getPoint(Input,Board,Val),
@@ -114,6 +114,7 @@ gameLoop(GameMode,DebugMode,{Human,AI},'YES'):-
         gameLoop(GameMode,DebugMode,{{HumanNewBoard,HumanNewSunk,HumanNewFleet},{AINewBoard,AINewSunk,AINewFleet}},Continue)
         ;'b'==GameMode->
         %Human
+        write('sink(★) hit(●) miss(■) not check(□)'),nl,
         write('Shoot at [X,Y]:'),nl,
         read(Input),
         checkInput(HumanGameBoard,Input,ValidInput),
