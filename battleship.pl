@@ -97,6 +97,8 @@ gameLoop(GameMode,DebugMode,{Human,AI},'YES'):-
     ('b'==DebugMode->
         write('Enemy fleet:'),nl,
         printFleet(AIFleet)
+        ;
+        nl
     ),
     write('Enemy Ocean: '),nl,
     printBoard(HumanGameBoard), nl,
