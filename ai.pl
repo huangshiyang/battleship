@@ -1,5 +1,3 @@
-:-include(tool).
-
 %TODO smart AI
 % totally random.
 aiChoice(Board,[RandX,RandY]):-

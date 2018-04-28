@@ -1,40 +1,50 @@
-:-include(shooting).
 :-include(tool).
+:-include(shooting).
 :-include(ai).
 :-include(fleet).
 
 start:-
     newOcean(10,10,InitialBoard),
-    createState(InitialBoard,Human),
-    createState(InitialBoard,AI),
-    gameConfig({Human,AI}).
+    gameModeConfig(GameMode),
+    createState(InitialBoard,Human,GameMode),
+    createState(InitialBoard,AI,'a'),
+    debugConfig(GameMode,{Human,AI}).
 
-newOcean(0,_SiValuee,[]).
-newOcean(N,SiValuee,[L|Ls]):-
+newOcean(0,_Size,[]).
+newOcean(N,Size,[L|Ls]):-
     N>0,NewN#=N-1,
-    oceanCreateLine(SiValuee,L),
-    newOcean(NewN,SiValuee,Ls).
+    oceanCreateLine(Size,L),
+    newOcean(NewN,Size,Ls).
 
 oceanCreateLine(0,[]).  
 oceanCreateLine(N,[~|L]):-
     N>0,NewN#=N-1,
     oceanCreateLine(NewN,L).  
 
-createState(InitialBoard,Player) :-
-    %createFleet(Fleet),%TODO randomly or manually create fleet
-    fleet(Fleet),
-    Player={InitialBoard,0,Fleet}.
-
-gameConfig({Human,AI}):-
-    write('Play mode: AI vs AI (a), or Human vs AI (b)'),
-    nl,
-    read(Mode),
-    (('a'==Mode;'b'==Mode)->
-        gameLoop(Mode,{Human,AI},'YES')
+gameModeConfig(GameMode):-
+    write('Play mode: AI vs AI (a), or Human vs AI (b)'),nl,
+    read(GameMode),
+    (('a'==GameMode;'b'==GameMode)->
+        nl
     ;
         write('Unknown mode'),nl,
-        gameConfig({Human,AI})
+        gameModeConfig(GameMode)
     ).
+
+createState(InitialBoard,Player,GameMode) :-
+    createFleet(Fleet,GameMode),
+    Player={InitialBoard,0,Fleet}.
+
+debugConfig(GameMode,{Human,AI}):-
+    write('Normal mode(a) or debug mode(b)'),nl,
+    read(DebugMode),
+    (('a'==DebugMode;'b'==DebugMode)->
+        gameLoop(GameMode,DebugMode,{Human,AI},'YES')
+    ;
+        write('Unknown mode'),nl,
+        debugConfig(GameMode,{Human,AI})
+    ).
+    
 
 %q to quit
 validInput(q).
@@ -64,32 +74,38 @@ checkInput(Board,Input,Valid):-
     ).
 
 gameLoop("q"):-write('Goodbye!').
-gameLoop(Mode,{Human,AI},'YES'):-
+gameLoop(GameMode,DebugMode,{Human,AI},'YES'):-
     {AIGameBoard,_AISunk,AIFleet}=AI,
     {HumanGameBoard,_HumanSunk,HumanFleet}=Human,%AI2
     %AI turn
     aiChoice(AIGameBoard,AIInput),
     
-    shoot(AIInput,AI,{AINewBoard,AINewSunk,AINewFleet}),
-    gameEnded(AINewSunk,AIFleet,AiWins),
+    shoot(AIInput,{AIGameBoard,_AISunk,HumanFleet},{AINewBoard,AINewSunk,HumanNewFleet}),
+    gameEnded(AINewSunk,HumanNewFleet,AiWins),
 
+    write('My fleet:'),nl,
+    printFleet(HumanNewFleet),
     write('My Ocean:'),nl,
     printBoard(AINewBoard),nl,
 
     %Human turn or AI2 turn
-    write('AIs Ocean: '),nl,
+    ('b'==DebugMode->
+        write('Enemy fleet:'),nl,
+        printFleet(AIFleet)
+    ),
+    write('Enemy Ocean: '),nl,
     printBoard(HumanGameBoard), nl,
 
-    ('a'==Mode->
+    ('a'==GameMode->
         %AI vs AI
         aiChoice(HumanGameBoard,AI2Input),
     
-        shoot(AI2Input,Human,{HumanNewBoard,HumanNewSunk,HumanNewFleet}),
-        gameEnded(HumanNewSunk,HumanFleet,Ai2Wins),
+        shoot(AI2Input,{HumanGameBoard,_HumanSunk,AIFleet},{HumanNewBoard,HumanNewSunk,AINewFleet}),
+        gameEnded(HumanNewSunk,AINewFleet,Ai2Wins),
         decide2continue(AiWins,Ai2Wins,Continue),
         sleep(0.1),
-        gameLoop(Mode,{{HumanNewBoard,HumanNewSunk,HumanNewFleet},{AINewBoard,AINewSunk,AINewFleet}},Continue)
-        ;'b'==Mode->
+        gameLoop(GameMode,DebugMode,{{HumanNewBoard,HumanNewSunk,HumanNewFleet},{AINewBoard,AINewSunk,AINewFleet}},Continue)
+        ;'b'==GameMode->
         %Human
         write('Shoot at [X,Y]:'),nl,
         read(Input),
@@ -99,22 +115,26 @@ gameLoop(Mode,{Human,AI},'YES'):-
         ;
             nl,
             [X,Y]=ValidInput,
-            shoot([X,Y],Human,{HumanNewBoard,HumanNewSunk,HumanNewFleet}),
-            gameEnded(HumanNewSunk,HumanFleet,HumanWins),
+            shoot([X,Y],{HumanGameBoard,_HumanSunk,AIFleet},{HumanNewBoard,HumanNewSunk,AINewFleet}),
+            gameEnded(HumanNewSunk,AINewFleet,HumanWins),
             decide2continue(AiWins,HumanWins,Continue),
-            gameLoop(Mode,{{HumanNewBoard,HumanNewSunk,HumanNewFleet},{AINewBoard,AINewSunk,AINewFleet}},Continue)
+            gameLoop(GameMode,DebugMode,{{HumanNewBoard,HumanNewSunk,HumanNewFleet},{AINewBoard,AINewSunk,AINewFleet}},Continue)
         )
     ).
 
 %end game
-gameLoop(_Mode,{Human,AI},'NO'):-
-    {AIBoard,AISunk,_}=AI,
-    {HumanBoard,HumanSunk,_}=Human,
+gameLoop(_Mode,_DebugMode,{Human,AI},'NO'):-
+    {AIBoard,AISunk,AIFleet}=AI,
+    {HumanBoard,HumanSunk,HumanFleet}=Human,
     write('Game ended'),nl,
     write('=========='),nl,
+    write('My fleet:'),nl,
+    printFleet(HumanFleet),
     write('My Ocean:'),nl,
     printBoard(AIBoard),nl,
-    write('AIs Ocean:'),nl,
+    write('Enemy fleet:'),nl,
+    printFleet(AIFleet),
+    write('Enemy Ocean:'),nl,
     printBoard(HumanBoard),nl,
     (AISunk>HumanSunk->
         write('You lose'),nl
