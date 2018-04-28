@@ -17,7 +17,7 @@ newOcean(N,Size,[L|Ls]):-
     newOcean(NewN,Size,Ls).
 
 oceanCreateLine(0,[]).  
-oceanCreateLine(N,[~|L]):-
+oceanCreateLine(N,['□'|L]):-%'□' for ocean
     N>0,NewN#=N-1,
     oceanCreateLine(NewN,L).  
 
@@ -59,7 +59,7 @@ checkInput(_,Input,Valid):-
 checkInput(Board,Input,Valid):-
     validInput(Input),
     getPoint(Input,Board,Val),
-    ('~'==Val->
+    ('□'==Val->%empty ocean
         [InX,InY]=Input,
         X#=InX-1,
         Y#=InY-1,

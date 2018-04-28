@@ -1,33 +1,33 @@
 % shoot([X,Y],Player,UpdatedPlayer)
 shoot([X,Y],{Board,CountSunk,Fleet},{NewBoard,NewCounter,NewFleet}):-
     checkShoot([X,Y],Fleet,Result,NewFleet),
-    ('h'==Result->
-        updatePoint([X,Y],'h',Board,NewBoard),
+    ('●'==Result->%hit
+        updatePoint([X,Y],'●',Board,NewBoard),%hit
         NewCounter=CountSunk
     ;
-    's'==Result->
+    '★'==Result->%sink
         getShipCoordinate([X,Y],Fleet,CoordinateList),
-        updateSinkShip(CoordinateList,'s',Board,NewBoard),
+        updateSinkShip(CoordinateList,'★',Board,NewBoard),%sink
         NewCounter#=CountSunk+1
     ).
 shoot([X,Y],{Board,CountSunk,Fleet},{NewBoard,CountSunk,NewFleet}):-
-    checkShoot([X,Y],Fleet,'m',NewFleet),
-    updatePoint([X,Y],'m',Board,NewBoard).
+    checkShoot([X,Y],Fleet,'■',NewFleet),%miss
+    updatePoint([X,Y],'■',Board,NewBoard).%miss
 
 %checkShoot([X,Y],Fleet,Result,NewFleet)
 checkShoot([X,Y],[Ship|Ships],Result,NewFleet):-
     (checkSink([X,Y],Ship,NewShip)->
-        Result='s'
+        Result='★'%sink
     ;
         checkHit([X,Y],Ship,NewShip),
-        Result='h'
+        Result='●'%hit
     ),
     NewFleet=[NewShip|Ships].
 checkShoot([X,Y],[Ship|Ships],Result,NewFleet):-
     checkMiss([X,Y],Ship),
     checkShoot([X,Y],Ships,Result,Tmp),
     NewFleet=[Ship|Tmp].
-checkShoot([_X,_Y],[],'m',[]).
+checkShoot([_X,_Y],[],'■',[]).%miss
 
 checkHit([X,Y],Ship,NewShip):-
     {CoordinateList,HitList}=Ship,
@@ -48,7 +48,7 @@ checkSink([X,Y],Ship,NewShip):-
     CountHit==CountCoordinate,
     NewShip={CoordinateList,NewHitList}.
 
-%update the point [X,Y] on the board with 's','h','m'
+%update the point [X,Y] on the board with sink(★),hit(●),miss(■)
 updatePoint([X,Y],Result,Board,NewBoard):-
     replace(Board,Y,X,Result,NewBoard).
 replace([L|Ls],0,Column,Value,[R|Ls]):-
@@ -61,7 +61,7 @@ replaceColumn([C|Cs],Column,Value,[C|Rs]):-
     Column>0,NewColumn#=Column-1,
     replaceColumn(Cs,NewColumn,Value,Rs).
 
-%update all the points for the sunken ship to 's'
+%update all the points for the sunken ship to '★'
 updateSinkShip([P|Ps],Result,BoardIn,BoardOut):-
     [X,Y]=P,
     updatePoint([X,Y],Result,Board2,BoardOut),

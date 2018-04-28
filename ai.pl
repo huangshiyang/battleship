@@ -4,7 +4,7 @@ aiChoice(Board,[RandX,RandY]):-
     random(1,11,X),
     random(1,11,Y),
     getPoint([X,Y],Board,Val),
-    ('~'==Val->
+    ('□'==Val->
         RandX#=X-1,
         RandY#=Y-1
     ;
